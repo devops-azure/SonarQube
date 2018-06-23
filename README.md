@@ -1,2 +1,55 @@
 # SonarQube
-Repository holds SonarQube Server and Sonar-scanner setup and usage
+Repository holds SonarQube Server and sonar-scanner setup and usage
+
+
+SonarQube setup:
+
+Use t2.medium and above, and follow below link for complete setup:
+https://hostpresto.com/community/tutorials/how-to-install-sonarqube-continuous-inspection-on-ubuntu-14-04/
+
+Sonar-scanner:
+curl -SL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.0.3.778-linux.zip --output sonar-scanner.zip && \
+unzip -d /usr/share/ sonar-scanner.zip && \
+ln -s /usr/share/sonar-scanner-3.0.3.778-linux/bin/sonar-scanner /usr/bin/sonar-scanner && \
+rm -rf /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties && \
+cp sonar-scanner.properties /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties
+
+
+After Application Build steps, run below command:
+sonar-scanner
+
+===================================================================
+
+From Docker:
+
+#Install sonar-scanner and use host sonar properties 
+RUN curl -SL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.0.3.778-linux.zip --output sonar-scanner.zip && \
+    unzip -d /usr/share/ sonar-scanner.zip && \
+    ln -s /usr/share/sonar-scanner-3.0.3.778-linux/bin/sonar-scanner /usr/bin/sonar-scanner && \
+    rm -rf /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties && \
+    cp sonar-scanner.properties /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties
+
+#Build app inside container
+RUN npm install
+RUN ng build --prod
+
+#run sonar-scanner
+RUN sonar-scanner
+
+
+sonar-scanner.properties file:
+
+#Configure here general information about the environment, such as SonarQube server connection details for example
+#No information about specific project should appear here
+
+#----- Default SonarQube server
+sonar.host.url=http://54.233.175.68:9000/
+sonar.login=67f571c485494a533830b5aef155e5ab13281d74
+
+#----- Default source code encoding
+sonar.sourceEncoding=UTF-8
+sonar.projectKey=PearUpWeb
+sonar.sources=.
+sonar.exclusions=**/node_modules/**/*.*, **/dist/**/*.*
+
+
