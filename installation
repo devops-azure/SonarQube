@@ -24,11 +24,9 @@ RUN curl -SL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sona
     ln -s /usr/share/sonar-scanner-3.0.3.778-linux/bin/sonar-scanner /usr/bin/sonar-scanner && \
     rm -rf /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties && \
     cp sonar-scanner.properties /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties
-
 # Build app inside container
 RUN npm install
 RUN ng build --prod
-
 # run sonar-scanner
 RUN sonar-scanner
 
