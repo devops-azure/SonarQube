@@ -1,0 +1,17 @@
+version: "2"
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./nginx:/etc/nginx/
+
+  sonarqube:
+    restart: always
+    image: sonarqube
+    ports:
+      - 9000:9000
+#    volumes:
+#      - ./sonarqube:/opt/sonarqube/
+
