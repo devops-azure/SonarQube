@@ -1,0 +1,151 @@
+Install Java 8:
+sudo add-apt-repository ppa:webupd8team/java
+
+
+sudo apt-get update -y
+
+sudo apt-get install oracle-java8-installer -y
+
+java -version
+
+----------
+Install sonarqube:
+wget https://sonarsource.bintray.com/Distribution/sonarqube/sonarqube-6.4.zip
+
+sudo unzip sonarqube-6.4.zip -d /opt
+
+sudo mv /opt/sonarqube-6.4 /opt/sonar
+
+--for DB:
+sudo nano /opt/sonar/conf/sonar.properties
+
+Make the following changes:
+
+##Database User credentials:
+sonar.jdbc.username=sonar
+sonar.jdbc.password=yourpassword
+sonar.jdbc.url=jdbc:mysql://localhost:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+--
+Make sonar as service:
+
+sudo vi /etc/systemd/system/sonar.service
+
+Add the following lines:
+
+[Unit]
+Description=SonarQube service
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+ExecStart=/opt/sonar/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonar/bin/linux-x86-64/sonar.sh stop
+
+User=root
+Group=root
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+---
+sudo systemctl start sonar
+sudo systemctl enable sonar
+sudo systemctl status sonar
+
+----
+
+curl -SL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.0.3.778-linux.zip --output sonar-scanner.zip
+
+https://www.howtoforge.com/tutorial/how-to-install-sonarqube-on-ubuntu-1604/
+https://www.voyalab.com/2016/10/06/install-sonarqube-ubuntu/
+https://hostpresto.com/community/tutorials/how-to-install-sonarqube-continuous-inspection-on-ubuntu-14-04/
+
+---------------------
+https://github.com/nosinovacao/dotnet-sonar/blob/master/Dockerfile
+sonarscanner:
+For Dotnet:
+Installation:
+https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+MSBuild
+
+Configuration:
+https://docs.sonarqube.org/display/SCAN/Install+the+SonarScanner+for+MSBuild
+
+User Token: for pwd less
+https://docs.sonarqube.org/display/SONAR/User+Token
+
+Permission:
+https://docs.sonarqube.org/display/SONARQUBE54/Authorization#Authorization-GlobalPermissions
+
+-------------
+sonar-scanner:
+https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
+
+
+FROM microsoft/dotnet:2.0.3-sdk as Builder
+WORKDIR /PearUp.Api
+COPY . .
+RUN apt update
+RUN apt install -y openjdk-8-jdk
+COPY sonar-scanner-msbuild-4.1.1.1164-netcoreapp2.0 .
+#RUN dotnet restore
+RUN chmod -R +x sonar-scanner-msbuild-4.1.1.1164-netcoreapp2.0/sonar-scanner-3.1.0.1141/bin/
+RUN dotnet sonar-scanner-msbuild-4.1.1.1164-netcoreapp2.0/SonarScanner.MSBuild.dll begin /k:"PearU"
+RUN dotnet publish --output ./out
+RUN dotnet sonar-scanner-msbuild-4.1.1.1164-netcoreapp2.0/SonarScanner.MSBuild.dll end
+
+FROM microsoft/aspnetcore
+WORKDIR /PearUp.Api
+COPY --from=Builder /PearUp.Api/PearUp.Api/out .
+ENV ASPNETCORE_URLS http://0.0.0.0:61167
+CMD ["dotnet", "PearUp.Api.dll"]
+
+
+-----
+
+FROM microsoft/dotnet:2.0.3-sdk as Builder
+WORKDIR /PearUp.Api
+COPY . .
+RUN apt update && \
+    apt install -y unzip
+
+RUN curl -SL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-3.0.3.778-linux.zip --output sonar-scanner.zip && \
+    unzip -d /usr/share/ sonar-scanner.zip && \
+    ln -s /usr/share/sonar-scanner-3.0.3.778-linux/bin/sonar-scanner /usr/bin/sonar-scanner && \
+    rm -rf /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties && \
+    cp sonar-scanner.properties /usr/share/sonar-scanner-3.0.3.778-linux/conf/sonar-scanner.properties
+
+RUN dotnet restore
+RUN dotnet publish --output ./out
+RUN sonar-scanner
+
+FROM microsoft/aspnetcore
+WORKDIR /PearUp.Api
+COPY --from=Builder /PearUp.Api/PearUp.Api/out .
+ENV ASPNETCORE_URLS http://0.0.0.0:61167
+CMD ["dotnet", "PearUp.Api.dll"]
+----
+
+
+How to exclude the directory in SonarQube?
+————————————————————–
+try something like this:
+sonar.exclusions=**/node_modules/**/*.*, **/dist/**/*.*
+
+sonar.exclusions=src/java/test/**
+sonar.exclusions=system/**, test/**, application/third_party/**, application/logs/**
+
+
+
+------------
+TOKEN: f4cfa590078a3303aefce4c5a4b6a34e82f37def
+
+-----
+
+To increase Java Heap Size:
+SONAR_SCANNER_OPTS="-Xmx3062m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=128m"
+
+---
+https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner
+
